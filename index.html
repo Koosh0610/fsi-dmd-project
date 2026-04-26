@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DMD Analysis of Cylinder Wake Vortex Shedding</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+<style>
+  :root {
+    --bg: #0a0e17;
+    --surface: #111827;
+    --surface2: #1a2234;
+    --border: #2a3a52;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --accent: #60a5fa;
+    --accent2: #a78bfa;
+    --accent3: #34d399;
+    --accent-glow: rgba(96,165,250,0.15);
+    --red: #f87171;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.8;
+    font-size: 17px;
+  }
+
+  /* ── Hero ────────────────────────────────────────────── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 2rem;
+    background:
+      radial-gradient(ellipse at 30% 50%, rgba(96,165,250,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 70% 50%, rgba(167,139,250,0.06) 0%, transparent 60%),
+      var(--bg);
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 98px,
+      rgba(96,165,250,0.03) 98px,
+      rgba(96,165,250,0.03) 100px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 98px,
+      rgba(96,165,250,0.03) 98px,
+      rgba(96,165,250,0.03) 100px
+    );
+    pointer-events: none;
+  }
+
+  .hero h1 {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    color: #fff;
+    margin-bottom: 0.5rem;
+    position: relative;
+  }
+
+  .hero h1 span {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero .subtitle {
+    font-size: 1.2rem;
+    color: var(--text-dim);
+    max-width: 700px;
+    margin-bottom: 2rem;
+    position: relative;
+  }
+
+  .hero .meta {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    position: relative;
+  }
+
+  .meta-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.8rem 1.5rem;
+    text-align: center;
+  }
+
+  .meta-item .value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+    color: var(--accent);
+  }
+
+  .meta-item .label {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* ── Navigation ──────────────────────────────────────── */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10,14,23,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0.6rem 1rem;
+    overflow-x: auto;
+    white-space: nowrap;
+    text-align: center;
+  }
+
+  nav a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    transition: all 0.2s;
+    display: inline-block;
+  }
+
+  nav a:hover { color: var(--accent); background: var(--accent-glow); }
+
+  /* ── Sections ────────────────────────────────────────── */
+  .container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+
+  section {
+    padding: 4rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  section:last-of-type { border-bottom: none; }
+
+  h2 {
+    font-size: 1.8rem;
+    font-weight: 400;
+    margin-bottom: 0.3rem;
+    color: #fff;
+    letter-spacing: -0.01em;
+  }
+
+  h2 .num {
+    font-family: 'Courier New', monospace;
+    color: var(--accent);
+    font-size: 0.9em;
+    margin-right: 0.3rem;
+  }
+
+  h3 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-top: 2.5rem;
+    margin-bottom: 0.8rem;
+    color: var(--accent);
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  .section-lead {
+    font-size: 1.05rem;
+    color: var(--text-dim);
+    margin-bottom: 2rem;
+    border-left: 3px solid var(--accent);
+    padding-left: 1rem;
+  }
+
+  p { margin-bottom: 1.2rem; }
+
+  /* ── Figures ─────────────────────────────────────────── */
+  .figure {
+    margin: 2rem 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .figure:hover { border-color: var(--accent); }
+
+  .figure img, .figure video {
+    width: 100%;
+    display: block;
+    background: #fff;
+  }
+
+  .figure-caption {
+    padding: 1rem 1.5rem;
+    font-size: 0.92rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .figure-caption .fig-label {
+    font-family: 'Courier New', monospace;
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+
+  .figure-caption p { margin-bottom: 0.5rem; }
+  .figure-caption p:last-child { margin-bottom: 0; }
+
+  .fig-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin: 2rem 0;
+  }
+
+  .fig-grid .figure { margin: 0; }
+
+  @media (max-width: 700px) {
+    .fig-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ── Key result callouts ─────────────────────────────── */
+  .callout {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 6px;
+    padding: 1.2rem 1.5rem;
+    margin: 1.5rem 0;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 0.95rem;
+  }
+
+  .callout.success { border-left-color: var(--accent3); }
+  .callout.warn { border-left-color: #fbbf24; }
+
+  .callout strong { color: #fff; }
+
+  /* ── Equation blocks ─────────────────────────────────── */
+  .equation {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    text-align: center;
+    overflow-x: auto;
+  }
+
+  /* ── Table ───────────────────────────────────────────── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-size: 0.92rem;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  th, td {
+    padding: 0.7rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  th {
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  td code {
+    font-family: 'Courier New', monospace;
+    background: var(--surface2);
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.88em;
+    color: var(--accent2);
+  }
+
+  /* ── Footer ──────────────────────────────────────────── */
+  footer {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    border-top: 1px solid var(--border);
+  }
+
+  footer a { color: var(--accent); text-decoration: none; }
+
+  /* ── KaTeX overrides ─────────────────────────────────── */
+  .katex { color: var(--text); font-size: 1.05em; }
+  .katex-display { margin: 1rem 0; overflow-x: auto; }
+</style>
+</head>
+
+<body>
+
+<!-- ════════════════════════════════════════════════════════
+     HERO
+     ════════════════════════════════════════════════════════ -->
+<div class="hero">
+  <h1><span>Dynamic Mode Decomposition</span><br>of Cylinder Wake Vortex Shedding</h1>
+  <p class="subtitle">
+    A data-driven spectral decomposition of the 2D vorticity field behind a circular cylinder at Reynolds number 100,
+    recovering coherent vortex shedding structures and validating against known Strouhal scaling.
+  </p>
+  <div class="meta">
+    <div class="meta-item">
+      <div class="value">0.1654</div>
+      <div class="label">Strouhal Number</div>
+    </div>
+    <div class="meta-item">
+      <div class="value">0.077%</div>
+      <div class="label">Reconstruction Error</div>
+    </div>
+    <div class="meta-item">
+      <div class="value">Re = 100</div>
+      <div class="label">Reynolds Number</div>
+    </div>
+    <div class="meta-item">
+      <div class="value">89,351</div>
+      <div class="label">Spatial DOF</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     NAVIGATION
+     ════════════════════════════════════════════════════════ -->
+<nav>
+  <a href="#introduction">Introduction</a>
+  <a href="#methodology">Methodology</a>
+  <a href="#data">Data Exploration</a>
+  <a href="#svd">SVD &amp; Rank Selection</a>
+  <a href="#dmd">DMD Fitting</a>
+  <a href="#reconstruction">Reconstruction</a>
+  <a href="#spectral">Spectral Analysis</a>
+  <a href="#pod">POD Comparison</a>
+  <a href="#sensitivity">Sensitivity &amp; BOPDMD</a>
+  <a href="#animation">Animation</a>
+  <a href="#conclusions">Conclusions</a>
+  <a href="#references">References</a>
+</nav>
+
+<div class="container">
+
+<!-- ════════════════════════════════════════════════════════
+     1. INTRODUCTION
+     ════════════════════════════════════════════════════════ -->
+<section id="introduction">
+  <h2><span class="num">01</span> Introduction</h2>
+  <p class="section-lead">
+    The von K&aacute;rm&aacute;n vortex street behind a circular cylinder is one of the most fundamental phenomena in fluid dynamics &mdash; and one of the cleanest test cases for data-driven modal decomposition.
+  </p>
+
+  <p>
+    At Reynolds number $\mathrm{Re} = UD/\nu = 100$, the wake behind a circular cylinder settles into a two-dimensional, time-periodic vortex shedding pattern. This limit-cycle behaviour is characterised by a single dominant frequency, the <em>Strouhal number</em> $\mathrm{St} = fD/U$, which has been extensively catalogued experimentally and numerically. Williamson (1996) established the reference value $\mathrm{St} \approx 0.166$ at $\mathrm{Re} = 100$.
+  </p>
+
+  <p>
+    Dynamic Mode Decomposition (DMD), introduced by Schmid (2010) and formalised by Tu et al. (2014), extracts spatiotemporal coherent structures directly from snapshot data. Unlike Proper Orthogonal Decomposition (POD), which ranks modes by energy, DMD decomposes the data into modes that each oscillate at a single frequency and growth/decay rate. This makes it ideally suited for flows dominated by periodic dynamics.
+  </p>
+
+  <p>
+    This report applies exact DMD with optimised amplitudes to 151 vorticity snapshots from a direct numerical simulation of cylinder flow. We validate the recovered Strouhal number, quantify reconstruction fidelity, perform selective frequency-group reconstructions, analyse centreline wake physics, compare with POD, and benchmark robustness across truncation ranks and against Bagging Optimised DMD (BOPDMD).
+  </p>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     2. METHODOLOGY
+     ════════════════════════════════════════════════════════ -->
+<section id="methodology">
+  <h2><span class="num">02</span> Methodology</h2>
+  <p class="section-lead">
+    The mathematical framework underlying DMD, SVD-based rank truncation, and the connection to the Koopman operator.
+  </p>
+
+  <h3>DMD Algorithm</h3>
+  <p>
+    Given a data matrix $\mathbf{X} = [\mathbf{x}_1, \mathbf{x}_2, \ldots, \mathbf{x}_m] \in \mathbb{R}^{n \times m}$ of $m$ temporal snapshots with $n$ spatial degrees of freedom, DMD seeks a best-fit linear operator $\mathbf{A}$ such that $\mathbf{x}_{k+1} \approx \mathbf{A}\mathbf{x}_k$. Defining $\mathbf{X}' = [\mathbf{x}_2, \ldots, \mathbf{x}_m]$ and $\mathbf{X} = [\mathbf{x}_1, \ldots, \mathbf{x}_{m-1}]$:
+  </p>
+
+  <div class="equation">
+    $$\mathbf{A} = \mathbf{X}' \mathbf{X}^\dagger$$
+  </div>
+
+  <p>
+    Since $\mathbf{A} \in \mathbb{R}^{n \times n}$ is prohibitively large (here $n = 89{,}351$), we project onto the first $r$ POD modes via the truncated SVD $\mathbf{X} \approx \mathbf{U}_r \mathbf{\Sigma}_r \mathbf{V}_r^*$:
+  </p>
+
+  <div class="equation">
+    $$\tilde{\mathbf{A}} = \mathbf{U}_r^* \mathbf{X}' \mathbf{V}_r \mathbf{\Sigma}_r^{-1}$$
+  </div>
+
+  <p>
+    The eigendecomposition $\tilde{\mathbf{A}} \mathbf{W} = \mathbf{W} \mathbf{\Lambda}$ yields DMD eigenvalues $\lambda_k$ (diagonal of $\mathbf{\Lambda}$) and DMD modes $\boldsymbol{\Phi} = \mathbf{X}' \mathbf{V}_r \mathbf{\Sigma}_r^{-1} \mathbf{W}$ (the exact DMD formulation of Tu et al. 2014). Each mode oscillates at frequency $f_k = \mathrm{Im}(\omega_k)/(2\pi)$ where $\omega_k = \ln(\lambda_k)/\Delta t$, and grows or decays at rate $\mathrm{Re}(\omega_k)$.
+  </p>
+
+  <h3>Reconstruction</h3>
+  <p>
+    The full DMD reconstruction at time step $k$ is:
+  </p>
+
+  <div class="equation">
+    $$\mathbf{x}(k) = \sum_{j=1}^{r} \boldsymbol{\phi}_j \, b_j \, \lambda_j^k$$
+  </div>
+
+  <p>
+    where $b_j$ are the optimised amplitudes computed to minimise the Frobenius norm of the reconstruction error across all snapshots. Selective reconstruction uses a subset of modes (e.g., only the fundamental frequency $f_1$ and its harmonics) to isolate specific physical mechanisms.
+  </p>
+
+  <h3>POD</h3>
+  <p>
+    For comparison, Proper Orthogonal Decomposition decomposes the mean-subtracted data $\mathbf{X} - \bar{\mathbf{x}}$ via SVD. The POD modes $\mathbf{U}_k$ are ranked by captured energy $\sigma_k^2 / \sum \sigma_j^2$. While POD modes are spatially orthogonal and energy-optimal, they do not isolate single frequencies &mdash; each POD mode can contain a mixture of temporal scales.
+  </p>
+
+  <h3>BOPDMD</h3>
+  <p>
+    Bagging Optimised DMD (Sashidhar &amp; Kutz, 2022) fits continuous-time eigenvalues $\omega_k$ directly (bypassing the matrix logarithm) using variable projection optimisation, with statistical robustness via bagging over random subsamples (100 trials, 80% subsample size). Eigenvalue constraints enforce conjugate pairing and purely imaginary eigenvalues, appropriate for limit-cycle flows.
+  </p>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     3. DATA EXPLORATION
+     ════════════════════════════════════════════════════════ -->
+<section id="data">
+  <h2><span class="num">03</span> Data Exploration</h2>
+  <p class="section-lead">
+    The dataset: 151 snapshots of the 2D vorticity field from a DNS of flow past a circular cylinder at Re = 100.
+  </p>
+
+  <p>
+    The simulation domain spans a $449 \times 199$ grid (streamwise $\times$ cross-stream), yielding $n = 89{,}351$ spatial degrees of freedom per snapshot. The time step is $\Delta t = 0.2$ in non-dimensional units ($D/U$), giving a total observation window of $T = 30$ convective time units &mdash; sufficient to capture approximately 5 complete shedding cycles.
+  </p>
+
+  <div class="figure">
+    <img src="figures/fig01_snapshot_panel.png" alt="Vorticity snapshots">
+    <div class="figure-caption">
+      <span class="fig-label">Figure 1</span> &mdash; Instantaneous vorticity fields at six time instants spanning the observation window. The alternating red (positive) and blue (negative) vortices advecting downstream form the classic von K&aacute;rm&aacute;n street. The shedding is fully periodic: the pattern at $t = 30$ is phase-aligned with $t = 0$, confirming limit-cycle dynamics. The cylinder is located at the left boundary where the wake originates.
+    </div>
+  </div>
+
+  <div class="fig-grid">
+    <div class="figure">
+      <img src="figures/fig02_time_mean_vorticity.png" alt="Time-mean vorticity">
+      <div class="figure-caption">
+        <span class="fig-label">Figure 2</span> &mdash; Time-averaged vorticity field. The antisymmetric shear layers from the upper and lower cylinder surfaces create a nearly symmetric mean wake. The mean vorticity decays downstream as the wake spreads diffusively, with the recirculation region visible as the concentrated vorticity zone immediately behind the cylinder.
+      </div>
+    </div>
+    <div class="figure">
+      <img src="figures/fig03_time_mean_velocity.png" alt="Time-mean velocity">
+      <div class="figure-caption">
+        <span class="fig-label">Figure 3</span> &mdash; Time-averaged streamwise velocity. The wake deficit (blue region) extends several diameters downstream before the velocity recovers toward the freestream value. The characteristic V-shaped spreading of the wake is visible, consistent with laminar wake theory at $\mathrm{Re} = 100$.
+      </div>
+    </div>
+  </div>
+
+  <div class="figure">
+    <img src="figures/fig04_fluctuation_field.png" alt="Fluctuation field">
+    <div class="figure-caption">
+      <span class="fig-label">Figure 4</span> &mdash; RMS vorticity fluctuation (standard deviation across all snapshots at each spatial point). The highest fluctuation intensity occurs in two lobes straddling the wake centreline, corresponding to the alternating vortex passage. The fluctuation envelope expands downstream, tracking the lateral spreading of the vortex street.
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     4. SVD & RANK SELECTION
+     ════════════════════════════════════════════════════════ -->
+<section id="svd">
+  <h2><span class="num">04</span> SVD &amp; Rank Selection</h2>
+  <p class="section-lead">
+    Choosing the truncation rank $r$ that balances fidelity against overfitting to noise.
+  </p>
+
+  <p>
+    The singular value spectrum of the snapshot matrix reveals the intrinsic dimensionality of the flow. For periodic flows, the spectrum exhibits pairs of nearly equal singular values (corresponding to sine/cosine pairs of each harmonic), followed by a rapid decay into numerical noise.
+  </p>
+
+  <div class="figure">
+    <img src="figures/fig05_singular_spectrum.png" alt="Singular spectrum">
+    <div class="figure-caption">
+      <span class="fig-label">Figure 5</span> &mdash; Singular value spectrum (log scale, left axis) and cumulative energy fraction (right axis). The first two singular values dominate, capturing the fundamental shedding mode pair. The spectrum shows clear pairwise structure through the first ~20 modes (10 frequency pairs). The vertical dashed line marks $r = 21$, our chosen truncation rank, which captures 99.9% of the total variance. Beyond this rank, the singular values plateau at the noise floor of the simulation data.
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>Rank selection: $r = 21$.</strong> This captures 10 harmonic frequency pairs plus the mean flow mode, accounting for 99.91% of the total energy. The reconstruction error at this rank is 0.077%, well below the 1% threshold typically considered acceptable for DMD.
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     5. DMD FITTING
+     ════════════════════════════════════════════════════════ -->
+<section id="dmd">
+  <h2><span class="num">05</span> DMD Fitting</h2>
+  <p class="section-lead">
+    Eigenvalue structure, frequency spectrum, modal growth rates, spatial modes, and temporal dynamics.
+  </p>
+
+  <p>
+    We fit exact DMD with optimised amplitudes at rank $r = 21$. The eigenvalues, sorted by amplitude, reveal the spectral content of the wake. For a purely periodic flow, all eigenvalues should lie on or very near the unit circle in the complex plane ($|\lambda_k| = 1$), indicating neither growth nor decay.
+  </p>
+
+  <div class="fig-grid">
+    <div class="figure">
+      <img src="figures/fig06_eigenvalues_unit_circle.png" alt="Eigenvalues on unit circle">
+      <div class="figure-caption">
+        <span class="fig-label">Figure 6</span> &mdash; DMD eigenvalues in the complex plane, coloured by amplitude $|b_k|$. All eigenvalues lie almost exactly on the unit circle, confirming that the flow is a stable limit cycle with no growing or decaying modes. The angular spacing of eigenvalue pairs corresponds to the fundamental frequency and its harmonics.
+      </div>
+    </div>
+    <div class="figure">
+      <img src="figures/fig07_frequency_spectrum.png" alt="Frequency spectrum">
+      <div class="figure-caption">
+        <span class="fig-label">Figure 7</span> &mdash; DMD amplitude spectrum with labelled harmonics. The dominant peak at $f_1 = 0.165$ corresponds to $\mathrm{St} = 0.1654$, matching the Williamson (1996) reference value of 0.166 to within 0.4%. Higher harmonics at $2f_1$, $3f_1$, etc. arise from the nonlinear advection of vortices, with amplitudes decaying approximately exponentially.
+      </div>
+    </div>
+  </div>
+
+  <div class="callout success">
+    <strong>Strouhal validation: St = 0.1654.</strong> The recovered dominant frequency matches the experimental reference $\mathrm{St} = 0.166$ (Williamson 1996) to within 0.4%, well inside the $\pm 5\%$ tolerance band (0.158 &ndash; 0.174). This is the primary validation gate for the entire analysis.
+  </div>
+
+  <div class="fig-grid">
+    <div class="figure">
+      <img src="figures/fig08_mode_growth_rates.png" alt="Growth rates">
+      <div class="figure-caption">
+        <span class="fig-label">Figure 8</span> &mdash; Growth/decay rates $\mathrm{Re}(\omega_k)$ for each DMD mode, plotted against frequency. The maximum absolute growth rate is $1.4 \times 10^{-4}$, effectively zero. This confirms that all modes are neutrally stable &mdash; the flow is in a steady-state periodic regime with no transient growth or decay.
+      </div>
+    </div>
+    <div class="figure">
+      <img src="figures/fig10_temporal_dynamics.png" alt="Temporal dynamics">
+      <div class="figure-caption">
+        <span class="fig-label">Figure 10</span> &mdash; Temporal evolution of the four highest-amplitude DMD modes. The dynamics $b_k \lambda_k^t$ show clean sinusoidal oscillations at the fundamental and harmonic frequencies. The constant-amplitude envelopes confirm neutral stability, and the phase relationships between modes encode the spatial structure of the vortex street.
+      </div>
+    </div>
+  </div>
+
+  <div class="figure">
+    <img src="figures/fig09_dmd_modes.png" alt="DMD spatial modes">
+    <div class="figure-caption">
+      <span class="fig-label">Figure 9</span> &mdash; First six DMD spatial modes, sorted by amplitude. The dominant mode pair (top row) shows the large-scale vortex shedding pattern &mdash; alternating positive/negative lobes convecting downstream. Higher-order modes (middle and bottom rows) capture finer spatial scales: the second harmonic shows doubled spatial wavenumber, the third shows tripled, and so on. This clean harmonic progression is the hallmark of a nonlinear limit cycle decomposed into its Fourier-like DMD basis.
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     6. RECONSTRUCTION
+     ════════════════════════════════════════════════════════ -->
+<section id="reconstruction">
+  <h2><span class="num">06</span> Reconstruction</h2>
+  <p class="section-lead">
+    Reconstruction fidelity, rank dependence, and the contribution of individual frequency groups.
+  </p>
+
+  <div class="figure">
+    <img src="figures/fig11_true_vs_reconstructed.png" alt="True vs reconstructed">
+    <div class="figure-caption">
+      <span class="fig-label">Figure 11</span> &mdash; Side-by-side comparison of the true vorticity field (left) and the DMD reconstruction at rank 21 (right) for snapshot 75. The two fields are visually indistinguishable, with a global relative Frobenius error of just 0.077%. The DMD reconstruction faithfully captures every vortex core position, intensity, and the detailed structure of the shear layers.
+    </div>
+  </div>
+
+  <div class="figure">
+    <img src="figures/fig12_reconstruction_error_vs_rank.png" alt="Error vs rank">
+    <div class="figure-caption">
+      <span class="fig-label">Figure 12</span> &mdash; Reconstruction error (relative Frobenius norm) as a function of SVD truncation rank. The error drops steeply from rank 1 to rank 7 as the fundamental and first few harmonics are added, then plateaus. The pairwise structure of the decrease (each harmonic adds two modes &mdash; a conjugate pair) is evident. Beyond rank ~21, diminishing returns set in as higher harmonics contribute negligible energy.
+    </div>
+  </div>
+
+  <h3>Selective Frequency-Group Reconstruction</h3>
+  <p>
+    One of DMD's key strengths over POD is the ability to reconstruct the flow using only modes at specific frequencies. This allows us to isolate the physical contribution of each harmonic to the overall vortex dynamics.
+  </p>
+
+  <div class="figure">
+    <img src="figures/fig13_selective_reconstruction.png" alt="Selective reconstruction">
+    <div class="figure-caption">
+      <span class="fig-label">Figure 13</span> &mdash; Selective DMD reconstruction of snapshot 75 using different frequency groups. (a) Original field. (b) Mean flow only ($f_0$): the time-averaged wake structure. (c) Mean + fundamental: adding $f_1$ introduces the primary alternating vortex pattern. (d) Mean + $f_1$ + $2f_1$: the second harmonic sharpens the vortex cores. (e) All harmonics through $5f_1$: nearly indistinguishable from the original. (f) Full rank-21 DMD: captures residual high-frequency content.
+    </div>
+  </div>
+
+  <div class="figure">
+    <img src="figures/fig14_progressive_harmonic_buildup.png" alt="Progressive harmonic buildup">
+    <div class="figure-caption">
+      <span class="fig-label">Figure 14</span> &mdash; Progressive harmonic buildup, showing how the reconstructed field evolves as harmonics are added one at a time. Each panel reports its local reconstruction error. The fundamental frequency alone captures the gross vortex pattern; the second harmonic introduces the asymmetry between positive and negative vortices; higher harmonics refine the thin shear layer filaments between vortex cores.
+    </div>
+  </div>
+
+  <div class="figure">
+    <img src="figures/fig15_error_by_harmonic.png" alt="Error by harmonic count">
+    <div class="figure-caption">
+      <span class="fig-label">Figure 15</span> &mdash; Global reconstruction error (relative Frobenius norm, %) as harmonics are cumulatively added. The mean flow alone gives ~50% error, confirming that the fluctuating component carries half the signal. Adding $f_1$ drops the error dramatically. Each subsequent harmonic provides a progressively smaller improvement, consistent with the exponentially decaying amplitude spectrum seen in Figure 7.
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     7. SPECTRAL & CENTRELINE ANALYSIS
+     ════════════════════════════════════════════════════════ -->
+<section id="spectral">
+  <h2><span class="num">07</span> Spectral &amp; Centreline Analysis</h2>
+  <p class="section-lead">
+    Probing the spatial structure of the wake through centreline velocity profiles, power spectra, and phase-space dynamics.
+  </p>
+
+  <div class="figure">
+    <img src="figures/fig16_centreline_velocity_deficit.png" alt="Centreline velocity deficit">
+    <div class="figure-caption">
+      <span class="fig-label">Figure 16</span> &mdash; Mean centreline velocity deficit $1 - \bar{u}/U_\infty$ as a function of streamwise position. The deficit peaks in the recirculation zone immediately behind the cylinder and decays monotonically downstream as the wake recovers. The recovery rate is consistent with laminar far-wake similarity solutions, which predict $1 - \bar{u} \sim x^{-1/2}$.
+    </div>
+  </div>
+
+  <div class="figure">
+    <img src="figures/fig17_centreline_time_traces.png" alt="Centreline time traces">
+    <div class="figure-caption">
+      <span class="fig-label">Figure 17</span> &mdash; Centreline vorticity time traces at six downstream stations. Near the cylinder ($x = 50$), the oscillations are strong and regular. Further downstream, the amplitude gradually decreases due to viscous diffusion, but the frequency remains constant &mdash; a key signature of a globally synchronised vortex shedding mode. The constant frequency across all stations confirms the global nature of the instability.
+    </div>
+  </div>
+
+  <div class="fig-grid">
+    <div class="figure">
+      <img src="figures/fig18_power_spectra_downstream.png" alt="Power spectra downstream">
+      <div class="figure-caption">
+        <span class="fig-label">Figure 18</span> &mdash; Power spectral density (FFT-based) at five downstream positions, vertically offset for clarity. The fundamental peak at $\mathrm{St} \approx 0.165$ (red dashed line) is the dominant feature at all stations. The second and third harmonics are visible as smaller peaks. The spectral shape is remarkably consistent across streamwise positions, confirming that the entire wake oscillates at a single global frequency.
+      </div>
+    </div>
+    <div class="figure">
+      <img src="figures/fig19_spatiotemporal_centreline.png" alt="Spatiotemporal diagram">
+      <div class="figure-caption">
+        <span class="fig-label">Figure 19</span> &mdash; Spatiotemporal ($x$-$t$) diagram of centreline vorticity. The inclined stripes reveal vortex cores convecting downstream at the group velocity. The stripe slope gives the phase speed of the vortex pattern: steeper slopes indicate faster convection further downstream. The regular spacing confirms the time-periodic shedding, and the stripe contrast diminishing at large $x$ reflects viscous decay.
+      </div>
+    </div>
+  </div>
+
+  <div class="fig-grid">
+    <div class="figure">
+      <img src="figures/fig20_vorticity_rms_profiles.png" alt="RMS vorticity profiles">
+      <div class="figure-caption">
+        <span class="fig-label">Figure 20</span> &mdash; Cross-stream RMS vorticity profiles at multiple downstream stations, alongside a 2D map. The twin-peaked structure straddling the centreline corresponds to the vortex passage corridors. The peaks separate and diminish downstream as the wake spreads, consistent with laminar wake stability theory. The profiles normalised by their peak values collapse reasonably well, suggesting self-similar spreading.
+      </div>
+    </div>
+    <div class="figure">
+      <img src="figures/fig21_phase_portrait.png" alt="Phase portrait">
+      <div class="figure-caption">
+        <span class="fig-label">Figure 21</span> &mdash; Phase portrait: centreline vorticity at $x = 80$ (near-wake) vs. $x = 200$ (far-wake). The closed elliptical orbit confirms the limit-cycle nature of the flow &mdash; the system traces the same trajectory repeatedly in phase space. The slight ellipticity (rather than a perfect circle) indicates a phase lag between near-wake and far-wake oscillations, arising from the finite convection speed.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     8. POD COMPARISON
+     ════════════════════════════════════════════════════════ -->
+<section id="pod">
+  <h2><span class="num">08</span> POD Comparison</h2>
+  <p class="section-lead">
+    Comparing energy-ranked POD modes with frequency-ranked DMD modes &mdash; two complementary views of the same flow.
+  </p>
+
+  <p>
+    Proper Orthogonal Decomposition (POD) and DMD are both based on the SVD of the data matrix, but they answer different questions. POD asks: <em>"What spatial structures capture the most energy?"</em> DMD asks: <em>"What spatial structures oscillate at a single frequency?"</em> For time-periodic flows, the dominant POD and DMD modes are closely related, but the interpretive frameworks differ.
+  </p>
+
+  <div class="figure">
+    <img src="figures/fig22_pod_modes.png" alt="POD modes">
+    <div class="figure-caption">
+      <span class="fig-label">Figure 22</span> &mdash; First six POD modes with their energy fractions. Modes 0 and 1 form a conjugate pair capturing the fundamental shedding and together account for the majority of the fluctuation energy. Subsequent pairs capture higher harmonics with rapidly diminishing energy. Note the spatial wavenumber doubling from modes 0&ndash;1 to modes 2&ndash;3, consistent with the second harmonic.
+    </div>
+  </div>
+
+  <div class="figure">
+    <img src="figures/fig23_dmd_vs_pod_comparison.png" alt="DMD vs POD comparison">
+    <div class="figure-caption">
+      <span class="fig-label">Figure 23</span> &mdash; Side-by-side comparison of the dominant POD mode (mode 0) and the dominant DMD mode (highest amplitude, $f = 0.165$). The spatial structures are nearly identical &mdash; both capture the fundamental vortex shedding pattern. The key difference is interpretive: the POD mode is an energy-optimal basis function with no intrinsic temporal frequency, while the DMD mode oscillates precisely at $\mathrm{St} = 0.165$ with a known growth rate (zero, in this case).
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>POD vs. DMD:</strong> For this simple periodic flow, the two decompositions yield similar leading modes. The distinction becomes critical in flows with multiple competing frequencies, broadband turbulence, or transient dynamics &mdash; where POD modes mix frequencies and DMD modes isolate them.
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     9. SENSITIVITY & BOPDMD
+     ════════════════════════════════════════════════════════ -->
+<section id="sensitivity">
+  <h2><span class="num">09</span> Sensitivity Analysis &amp; BOPDMD Comparison</h2>
+  <p class="section-lead">
+    How robust are the DMD results to the choice of truncation rank and number of snapshots? And how does standard DMD compare to the statistically robust BOPDMD algorithm?
+  </p>
+
+  <h3>Strouhal Number Stability</h3>
+
+  <div class="figure">
+    <img src="figures/fig24_strouhal_vs_rank.png" alt="Strouhal vs rank">
+    <div class="figure-caption">
+      <span class="fig-label">Figure 24</span> &mdash; Recovered Strouhal number as a function of SVD truncation rank, from $r = 3$ to $r = 81$. The Strouhal number is perfectly stable at $\mathrm{St} = 0.1654$ across all tested ranks &mdash; every single value falls within the $\pm 5\%$ tolerance band (red shaded region). This remarkable stability demonstrates that the dominant shedding frequency is an intrinsic property of the data, not an artefact of a particular rank choice.
+    </div>
+  </div>
+
+  <h3>Rank&ndash;Snapshot Sensitivity</h3>
+
+  <div class="figure">
+    <img src="figures/fig25_rank_sensitivity_heatmap.png" alt="Rank sensitivity heatmap">
+    <div class="figure-caption">
+      <span class="fig-label">Figure 25</span> &mdash; Reconstruction error heatmap as a function of truncation rank (vertical) and number of snapshots used (horizontal). Low ranks with few snapshots yield the highest errors (top-left). The error decreases monotonically as either rank or snapshot count increases, with the most dramatic improvement coming from using at least $\sim$40 snapshots (roughly 2 shedding cycles). The heatmap confirms that rank 21 with all 151 snapshots is well within the converged regime.
+    </div>
+  </div>
+
+  <h3>BOPDMD Comparison</h3>
+  <p>
+    Bagging Optimised DMD (BOPDMD) provides a complementary approach to standard DMD. It fits continuous-time eigenvalues directly through nonlinear optimisation, with statistical robustness from bagging over 100 random 80%-subsamples. We enforce conjugate pairing and purely imaginary eigenvalue constraints, appropriate for a limit-cycle flow.
+  </p>
+
+  <div class="fig-grid">
+    <div class="figure">
+      <img src="figures/fig26_dmd_vs_bopdmd_eigenvalues.png" alt="DMD vs BOPDMD eigenvalues">
+      <div class="figure-caption">
+        <span class="fig-label">Figure 26</span> &mdash; Eigenvalue comparison. Left: standard DMD discrete eigenvalues $\lambda_k$ on the unit circle. Right: BOPDMD continuous eigenvalues $\omega_k$ in the complex plane. The BOPDMD eigenvalues lie exactly on the imaginary axis ($\mathrm{Re}(\omega) = 0$) by constraint, confirming neutral stability. Both methods identify the same set of harmonic frequencies, but BOPDMD provides direct access to continuous-time dynamics without the matrix logarithm.
+      </div>
+    </div>
+    <div class="figure">
+      <img src="figures/fig27_dmd_vs_bopdmd_spectra.png" alt="DMD vs BOPDMD spectra">
+      <div class="figure-caption">
+        <span class="fig-label">Figure 27</span> &mdash; Amplitude spectra comparison. Standard DMD (left, rank 21) and BOPDMD (right, rank 11) recover the same harmonic structure. The BOPDMD spectrum is cleaner with fewer spurious modes due to its lower rank and the eigenvalue constraints, while standard DMD captures more of the high-frequency content. The fundamental frequency and its first few harmonics are consistent between both methods.
+      </div>
+    </div>
+  </div>
+
+  <div class="callout success">
+    <strong>Both methods agree:</strong> Standard DMD and BOPDMD identify the same dominant physics. BOPDMD's statistical robustness and eigenvalue constraints produce a slightly cleaner spectrum at the cost of fewer resolved harmonics. For this well-behaved periodic flow, standard DMD is sufficient; BOPDMD would become essential for noisier or more complex datasets.
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     10. ANIMATION
+     ════════════════════════════════════════════════════════ -->
+<section id="animation">
+  <h2><span class="num">10</span> Animation</h2>
+  <p class="section-lead">
+    A frame-by-frame comparison of the true and DMD-reconstructed vorticity fields across all 151 snapshots.
+  </p>
+
+  <div class="figure">
+    <img src="figures/fig28_comparison_animation.gif" alt="DMD reconstruction animation">
+    <div class="figure-caption">
+      <span class="fig-label">Figure 28</span> &mdash; Animated comparison of the true vorticity field (left) and the rank-21 DMD reconstruction (right), cycling through all 151 snapshots at 12 fps. The reconstruction tracks every vortex core as it forms, detaches, and convects downstream. The visual indistinguishability of the two fields across the entire time series confirms the quantitative error metric of 0.077%.
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     11. CONCLUSIONS
+     ════════════════════════════════════════════════════════ -->
+<section id="conclusions">
+  <h2><span class="num">11</span> Conclusions</h2>
+  <p class="section-lead">
+    Summary of findings and key quantitative results.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Metric</th>
+        <th>Value</th>
+        <th>Reference / Target</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Strouhal number</td>
+        <td><code>St = 0.1654</code></td>
+        <td>0.166 (Williamson 1996)</td>
+        <td>Within 0.4%</td>
+      </tr>
+      <tr>
+        <td>Reconstruction error (rank 21)</td>
+        <td><code>0.077%</code></td>
+        <td>&lt; 1%</td>
+        <td>Pass</td>
+      </tr>
+      <tr>
+        <td>Energy captured (rank 21)</td>
+        <td><code>99.91%</code></td>
+        <td>&gt; 99%</td>
+        <td>Pass</td>
+      </tr>
+      <tr>
+        <td>Max growth rate</td>
+        <td><code>1.4 &times; 10<sup>-4</sup></code></td>
+        <td>&asymp; 0 (limit cycle)</td>
+        <td>Confirmed</td>
+      </tr>
+      <tr>
+        <td>Strouhal stability (ranks 3&ndash;81)</td>
+        <td><code>All within &pm;5%</code></td>
+        <td>0.158 &ndash; 0.174</td>
+        <td>100% pass rate</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    Dynamic Mode Decomposition successfully decomposes the cylinder wake into a compact set of frequency-ranked coherent structures. The dominant mode precisely recovers the vortex shedding Strouhal number, and the full rank-21 reconstruction is nearly perfect. The decomposition reveals a clean harmonic cascade: the fundamental frequency $f_1$ and its harmonics $2f_1, 3f_1, \ldots$ arise from the nonlinear saturation of the global instability, with exponentially decaying amplitudes.
+  </p>
+
+  <p>
+    The analysis demonstrates several strengths of DMD over classical POD: frequency isolation enables selective reconstruction by harmonic group, growth rate extraction confirms neutral stability, and the connection to the Koopman operator provides a rigorous dynamical-systems interpretation. The results are robust across truncation ranks (3 to 81) and consistent between standard DMD and the statistically bootstrapped BOPDMD variant.
+  </p>
+
+  <p>
+    For this canonical flow, 21 modes and 151 snapshots are more than sufficient. The methodology established here extends directly to more complex configurations: higher Reynolds numbers (where the wake becomes three-dimensional), non-circular geometries (elliptical cylinders, as in Thompson et al. 2014), and multi-body arrangements &mdash; though those flows will require careful attention to transient dynamics, spectral broadening, and mode selection.
+  </p>
+</section>
+
+<!-- ════════════════════════════════════════════════════════
+     12. REFERENCES
+     ════════════════════════════════════════════════════════ -->
+<section id="references">
+  <h2><span class="num">12</span> References</h2>
+
+  <p>
+    Kutz, J.N., Brunton, S.L., Brunton, B.W. &amp; Proctor, J.L. (2016). <em>Dynamic Mode Decomposition: Data-Driven Modeling of Complex Systems</em>. SIAM.
+  </p>
+  <p>
+    Tu, J.H., Rowley, C.W., Luchtenburg, D.M., Brunton, S.L. &amp; Kutz, J.N. (2014). On dynamic mode decomposition: Theory and applications. <em>Journal of Computational Dynamics</em>, 1(2), 391&ndash;421.
+  </p>
+  <p>
+    Schmid, P.J. (2010). Dynamic mode decomposition of numerical and experimental data. <em>Journal of Fluid Mechanics</em>, 656, 5&ndash;28.
+  </p>
+  <p>
+    Williamson, C.H.K. (1996). Vortex dynamics in the cylinder wake. <em>Annual Review of Fluid Mechanics</em>, 28, 477&ndash;539.
+  </p>
+  <p>
+    Thompson, M.C., Radi, A., Rao, A., Sheridan, J. &amp; Hourigan, K. (2014). Low-Reynolds-number wakes of elliptical cylinders: from the circular cylinder to the normal flat plate. <em>Journal of Fluid Mechanics</em>, 751, 570&ndash;600.
+  </p>
+  <p>
+    Sashidhar, D. &amp; Kutz, J.N. (2022). Bagging, optimized dynamic mode decomposition for robust, stable forecasting with spatial and temporal uncertainty quantification. <em>Philosophical Transactions of the Royal Society A</em>, 380(2229).
+  </p>
+</section>
+
+</div>
+
+<footer>
+  DMD Cylinder Wake Analysis &mdash; Built with Python, PyDMD, NumPy, Matplotlib<br>
+  <a href="https://github.com/Koosh0610/fsi-dmd-project">GitHub Repository</a>
+</footer>
+
+</body>
+</html>

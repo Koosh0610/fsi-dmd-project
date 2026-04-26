@@ -73,7 +73,7 @@ figures/                      All outputs (fig01-fig28)
 
 True vs DMD-reconstructed vorticity (151 snapshots, rank 21):
 
-https://github.com/Koosh0610/fsi-dmd-project/raw/master/figures/fig28_comparison_animation.mp4
+![DMD reconstruction animation](figures/fig28_comparison_animation.gif)
 
 ## Key Results
 
